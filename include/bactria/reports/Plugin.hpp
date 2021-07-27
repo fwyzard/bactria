@@ -374,7 +374,8 @@ namespace bactria
              *
              * \sa IncidentRecorder::store()
              */
-            [[gnu::always_inline]] auto record_value(void* report_handle, char const* key, std::int8_t value) -> void
+            [[gnu::always_inline]] inline auto record_value(void* report_handle, char const* key, std::int8_t value)
+                -> void
             {
                 if(record_int8_ptr != nullptr)
                     (record_int8_ptr)(report_handle, key, value);
@@ -387,7 +388,8 @@ namespace bactria
              *
              * \sa IncidentRecorder::store()
              */
-            [[gnu::always_inline]] auto record_value(void* report_handle, char const* key, std::uint8_t value) -> void
+            [[gnu::always_inline]] inline auto record_value(void* report_handle, char const* key, std::uint8_t value)
+                -> void
             {
                 if(record_uint8_ptr != nullptr)
                     (record_uint8_ptr)(report_handle, key, value);
@@ -400,7 +402,8 @@ namespace bactria
              *
              * \sa IncidentRecorder::store()
              */
-            [[gnu::always_inline]] auto record_value(void* report_handle, char const* key, std::int16_t value) -> void
+            [[gnu::always_inline]] inline auto record_value(void* report_handle, char const* key, std::int16_t value)
+                -> void
             {
                 if(record_int16_ptr != nullptr)
                     (record_int16_ptr)(report_handle, key, value);
@@ -413,7 +416,8 @@ namespace bactria
              *
              * \sa IncidentRecorder::store()
              */
-            [[gnu::always_inline]] auto record_value(void* report_handle, char const* key, std::uint16_t value) -> void
+            [[gnu::always_inline]] inline auto record_value(void* report_handle, char const* key, std::uint16_t value)
+                -> void
             {
                 if(record_uint16_ptr != nullptr)
                     (record_uint16_ptr)(report_handle, key, value);
@@ -426,7 +430,8 @@ namespace bactria
              *
              * \sa IncidentRecorder::store()
              */
-            [[gnu::always_inline]] auto record_value(void* report_handle, char const* key, std::int32_t value) -> void
+            [[gnu::always_inline]] inline auto record_value(void* report_handle, char const* key, std::int32_t value)
+                -> void
             {
                 if(record_int32_ptr != nullptr)
                     (record_int32_ptr)(report_handle, key, value);
