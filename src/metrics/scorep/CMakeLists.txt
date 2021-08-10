@@ -86,6 +86,8 @@ if(bactria_SCOREP_PLUGINS)
                                                       Metrics.cpp
                                                       ${CMAKE_CURRENT_BINARY_DIR}/main.scorep_init.c)
             target_link_libraries(bactria_metrics_scorep PRIVATE bactria ScoreP ${SCOREP_CONSTRUCTOR} toml11::toml11)
+
+            bactria_install_plugin(bactria_metrics_scorep)
         endif()
     else()
         message(FATAL_ERROR "Score-P plugin not supported for non-GNU compilers")

@@ -1,4 +1,5 @@
 include(FetchContent)
+include(GNUInstallDirs)
 
 find_package(Doxygen REQUIRED)
 
@@ -10,7 +11,7 @@ find_package(Doxygen REQUIRED)
 message(STATUS "Downloading Doxygen CSS theme")
 FetchContent_Declare(awesome_theme
                      GIT_REPOSITORY https://github.com/jothepro/doxygen-awesome-css.git
-                     GIT_TAG v1.4.0)
+                     GIT_TAG v1.5.0)
 FetchContent_MakeAvailable(awesome_theme)
 
 # Find public headers
@@ -31,5 +32,9 @@ doxygen_add_docs(bactriaDocs ${BACTRIA_PUBLIC_HEADERS} ALL COMMENT "Generating D
 ###############################################################################
 # Install docs
 ###############################################################################
-install(DIRECTORY ${DOXYGEN_OUTPUT_DIRECTORY}
-        DESTINATION ${CMAKE_INSTALL_DOCDIR})
+
+# Do not install if bactria is used as a CMake subdirectory
+if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
+    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html
+            TYPE DOC)
+endif()

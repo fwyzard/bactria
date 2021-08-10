@@ -20,45 +20,55 @@ project("bactria" VERSION       0.0.1
                   LANGUAGES     CXX)
 
 include(CMakeDependentOption)
+include(CMakePackageConfigHelpers)
 include(FetchContent)
 include(GNUInstallDirs)
 
 ###############################################################################
-# Options and variants
+# Options and variants (not useful for installed version)
 ###############################################################################
 
 option(bactria_BUILD_DOCUMENTATION "Generate the Doxygen documentation" OFF)
 option(bactria_BUILD_EXAMPLES "Build examples" ON)
+option(bactria_BUILD_PLUGINS "Build bactria's plugins" ON)
 
-option(bactria_ENABLE_PLUGINS "Build bactria's plugins" ON)
-cmake_dependent_option(bactria_CUDA_PLUGINS "Build the CUDA toolkit plugins" OFF bactria_ENABLE_PLUGINS OFF)
-cmake_dependent_option(bactria_STDOUT_PLUGINS "Build the STDOUT plugins" ON bactria_ENABLE_PLUGINS OFF)
+cmake_dependent_option(bactria_CUDA_PLUGINS "Build the CUDA toolkit plugins" OFF bactria_BUILD_PLUGINS OFF)
+cmake_dependent_option(bactria_STDOUT_PLUGINS "Build the STDOUT plugins" ON bactria_BUILD_PLUGINS OFF)
 cmake_dependent_option(bactria_SYSTEM_FMT "Use your local installation of {fmt}" ON bactria_STDOUT_PLUGINS OFF)
-cmake_dependent_option(bactria_SYSTEM_TOML11 "Use your local installation of toml11" ON bactria_ENABLE_PLUGINS OFF)
-cmake_dependent_option(bactria_JSON_PLUGINS "Build the JSON plugins" ON bactria_ENABLE_PLUGINS OFF)
+cmake_dependent_option(bactria_SYSTEM_TOML11 "Use your local installation of toml11" ON bactria_BUILD_PLUGINS OFF)
+cmake_dependent_option(bactria_JSON_PLUGINS "Build the JSON plugins" ON bactria_BUILD_PLUGINS OFF)
 cmake_dependent_option(bactria_SYSTEM_JSON "Use your local installation of nlohmann-json" ON bactria_JSON_PLUGINS OFF)
-cmake_dependent_option(bactria_ROCM_PLUGINS "Build the ROCm plugins" OFF bactria_ENABLE_PLUGINS OFF)
-cmake_dependent_option(bactria_SCOREP_PLUGINS "Build the Score-P plugins" OFF bactria_ENABLE_PLUGINS OFF)
-cmake_dependent_option(bactria_STDOUT_PLUGINS "Build the STDOUT plugins" ON bactria_ENABLE_PLUGINS OFF)
-
+cmake_dependent_option(bactria_ROCM_PLUGINS "Build the ROCm plugins" OFF bactria_BUILD_PLUGINS OFF)
+cmake_dependent_option(bactria_SCOREP_PLUGINS "Build the Score-P plugins" OFF bactria_BUILD_PLUGINS OFF)
+cmake_dependent_option(bactria_STDOUT_PLUGINS "Build the STDOUT plugins" ON bactria_BUILD_PLUGINS OFF)
 
 ###############################################################################
 # Internal variables
 ###############################################################################
 
-# This file's directory
+# This file's directory.
 set(_BACTRIA_ROOT_DIR ${CMAKE_CURRENT_LIST_DIR})
-# Normalize the path (Remove ../)
+# Normalize the path (Remove ../).
 get_filename_component(_BACTRIA_ROOT_DIR ${_BACTRIA_ROOT_DIR} ABSOLUTE)
 
-# Add module search path
+# Add module search path.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${_BACTRIA_ROOT_DIR}/cmake/modules)
 
-add_library(bactria INTERFACE)
-target_include_directories(bactria INTERFACE include)
-target_compile_features(bactria INTERFACE cxx_std_14)
-target_compile_options(bactria INTERFACE $<$<CXX_COMPILER_ID:GNU>:-Wno-attributes>)
-target_link_libraries(bactria INTERFACE $<$<NOT:$<PLATFORM_ID:Windows>>:${CMAKE_DL_LIBS}>)
+# Set include directory.
+set(_BACTRIA_INCLUDE_DIRECTORY ${_BACTRIA_ROOT_DIR}/include)
+
+# Set plugin installation directory.
+set(_BACTRIA_INSTALL_PLUGINDIR ${CMAKE_INSTALL_LIBDIR}/bactria/plugins)
+
+include(${_BACTRIA_ROOT_DIR}/cmake/bactriaCommon.cmake)
+
+# Used by subdirectories during installation
+macro(bactria_install_plugin targetName)
+    install(TARGETS ${targetName}
+            ARCHIVE DESTINATION ${_BACTRIA_INSTALL_PLUGINDIR}
+            LIBRARY DESTINATION ${_BACTRIA_INSTALL_PLUGINDIR}
+            RUNTIME DESTINATION ${_BACTRIA_INSTALL_PLUGINDIR})
+endmacro()
 
 if(bactria_BUILD_DOCUMENTATION)
     add_subdirectory("docs")
@@ -68,19 +78,19 @@ if(bactria_BUILD_EXAMPLES)
     add_subdirectory("examples")
 endif()
 
-if(bactria_ENABLE_PLUGINS)
+if(bactria_BUILD_PLUGINS)
     if(bactria_SYSTEM_TOML11)
-    find_package(toml11 REQUIRED)
+        find_package(toml11 REQUIRED)
     else()
-    message(STATUS "Downloading dependency toml11.")
-    FetchContent_Declare(toml_eleven
-        GIT_REPOSITORY https://github.com/ToruNiina/toml11.git
-        GIT_TAG v3.6.1)
-    FetchContent_MakeAvailable(toml_eleven)
+        message(STATUS "Downloading dependency toml11.")
+        FetchContent_Declare(toml_eleven
+            GIT_REPOSITORY https://github.com/ToruNiina/toml11.git
+            GIT_TAG v3.7.0)
+        FetchContent_MakeAvailable(toml_eleven)
     endif()
 
     if(bactria_CUDA_PLUGINS)
-    find_package(CUDAToolkit REQUIRED)
+        find_package(CUDAToolkit REQUIRED)
     endif()
 
     if(bactria_JSON_PLUGINS)
@@ -111,7 +121,7 @@ if(bactria_ENABLE_PLUGINS)
             message(STATUS "Downloading dependency {fmt}.")
             FetchContent_Declare(fmtlib
                 GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-                GIT_TAG 7.1.3)
+                GIT_TAG 8.0.1)
             FetchContent_MakeAvailable(fmtlib)
         endif()
     endif()
@@ -119,4 +129,31 @@ if(bactria_ENABLE_PLUGINS)
     add_subdirectory("src")
 endif()
 
+###############################################################################
+# Installation
+###############################################################################
 
+# Do not install if bactria is used as a CMake subdirectory
+if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
+    set(_BACTRIA_INSTALL_CMAKEDIR ${CMAKE_INSTALL_LIBDIR}/cmake/bactria)
+
+    write_basic_package_version_file(
+        bactriaConfigVersion.cmake
+        VERSION ${PROJECT_VERSION}
+        COMPATIBILITY SameMinorVersion)
+
+    configure_package_config_file(
+        ${_BACTRIA_ROOT_DIR}/cmake/bactriaConfig.cmake.in
+        ${PROJECT_BINARY_DIR}/bactriaConfig.cmake
+        INSTALL_DESTINATION ${_BACTRIA_INSTALL_CMAKEDIR})
+
+    install(FILES ${PROJECT_BINARY_DIR}/bactriaConfig.cmake
+                  ${PROJECT_BINARY_DIR}/bactriaConfigVersion.cmake
+            DESTINATION ${_BACTRIA_INSTALL_CMAKEDIR})
+
+    install(DIRECTORY ${_BACTRIA_ROOT_DIR}/include/bactria
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+    install(FILES ${_BACTRIA_ROOT_DIR}/cmake/bactriaCommon.cmake
+            DESTINATION ${_BACTRIA_INSTALL_CMAKEDIR})
+endif()
