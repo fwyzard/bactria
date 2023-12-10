@@ -8,7 +8,7 @@
 
 ### Introduction
 
-The **bactria** library is a header-only C++14 library for profiling and tracing. By annotating segments of your code
+The **bactria** library is a C++14 library for profiling and tracing. By annotating segments of your code
 with bactria's classes you can gather fine-grained information about your application's performance without
 introducing runtime overhead in other program parts.
 
